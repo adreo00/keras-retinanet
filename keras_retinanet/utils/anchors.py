@@ -16,6 +16,8 @@ limitations under the License.
 
 import numpy as np
 import keras
+import os
+import yaml
 
 from ..utils.compute_overlap import compute_overlap
 
@@ -180,7 +182,7 @@ def anchors_for_shape(
     sizes=None,
     shapes_callback=None,
 ):
-    """ Generators anchors for a given shape.
+    """ Generates anchors for a given shape based on specifications in anchors_default.yaml.
 
     Args
         image_shape: The shape of the image.
@@ -194,16 +196,21 @@ def anchors_for_shape(
     Returns
         np.array of shape (N, 4) containing the (x1, y1, x2, y2) coordinates for the anchors.
     """
+    with open(os.path.join('keras-retinanet','anchors_default.yaml'), 'r') as stream:
+        try:
+            anchor_dict=yaml.load(stream)
+        except yaml.YAMLError as exc:
+            print(exc)
     if pyramid_levels is None:
-        pyramid_levels = [3, 4, 5, 6, 7]
+        pyramid_levels = np.array(anchor_dict['pyramid_levels'])
     if strides is None:
-        strides = [2 ** x for x in pyramid_levels]
+        strides = np.array(anchor_dict['strides'],keras.backend.floatx())
     if sizes is None:
-        sizes = [2 ** (x + 2) for x in pyramid_levels]
+        sizes = np.array(anchor_dict['sizes'],keras.backend.floatx())
     if ratios is None:
-        ratios = np.array([0.5, 1, 2])
+        ratios = np.array(anchor_dict['ratios'],keras.backend.floatx())
     if scales is None:
-        scales = np.array([2 ** 0, 2 ** (1.0 / 3.0), 2 ** (2.0 / 3.0)])
+        scales = np.array(anchor_dict['scales'],keras.backend.floatx())
 
     if shapes_callback is None:
         shapes_callback = guess_shapes
